@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seth's Project Hub</title>
+    <!-- Add Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #000000;
+            overflow: hidden;
+            color: #333;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                circle at center,
+                transparent 0%,
+                rgba(0, 0, 0, 0) 45%,
+                rgba(0, 0, 0, 0.4) 100%
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .bubble-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            transition: transform 0.8s ease-out;
+            transform-origin: var(--zoom-x) var(--zoom-y);
+        }
+
+        .bubble-container.zooming {
+            transform: scale(100);
+            pointer-events: none;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 199;
+        }
+
+        .bubble-container.fade-out {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bubble-container.fade-in {
+            opacity: 1;
+            transition: opacity 1.5s ease;
+        }
+
+        .bubble-container.resetting {
+            opacity: 0;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+            padding: 20px;
+            /* Black bubbles with gradient */
+            background: radial-gradient(circle, #222222 40%, #111111 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            user-select: none;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        .bubble:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
+            border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .bubble h2,
+        .bubble p,
+        .bubble .icon {
+            transition: opacity 0.3s ease;  /* Add transition for smooth fade */
+        }
+
+        .bubble.clicked {
+            border-color: transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        .bubble.clicked h2,
+        .bubble.clicked p,
+        .bubble.clicked .icon {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .main-bubble {
+            z-index: 100;
+            width: 280px;
+            height: 280px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+            /* Slightly different gradient for main bubble */
+            background: radial-gradient(circle, #222222 30%, #000000 100%);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .main-bubble h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .project-bubble {
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, #1a1a1a 35%, #0a0a0a 100%);
+        }
+
+        .about-bubble {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, #1d1d1d 40%, #0c0c0c 100%);
+        }
+
+        .contact-bubble {
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, #1a1a1a 35%, #080808 100%);
+        }
+
+        .skills-bubble {
+            width: 190px;
+            height: 190px;
+            background: radial-gradient(circle, #1c1c1c 40%, #0b0b0b 100%);
+        }
+
+        .blog-bubble {
+            width: 170px;
+            height: 170px;
+            background: radial-gradient(circle, #1b1b1b 35%, #090909 100%);
+        }
+
+        .experience-bubble {
+            width: 185px;
+            height: 185px;
+            background: radial-gradient(circle, #1d1d1d 40%, #0c0c0c 100%);
+        }
+
+        .education-bubble {
+            width: 175px;
+            height: 175px;
+            background: radial-gradient(circle, #1a1a1a 35%, #0a0a0a 100%);
+        }
+
+        .portfolio-bubble {
+            width: 195px;
+            height: 195px;
+            background: radial-gradient(circle, #1c1c1c 40%, #090909 100%);
+        }
+
+        .bubble-content {
+            opacity: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #222222 0%, #111111 100%);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .bubble-content.active {
+            opacity: 1;
+            pointer-events: all;
+            color: white;
+        }
+
+        .bubble-content-inner {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            max-width: 800px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .bubble-content.active .bubble-content-inner {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bubble-content.closing {
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+            visibility: hidden;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .bubble h2 {
+            font-size: 1.2em;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* Canvas for drawing lines */
+        #connectionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        /* Content styling */
+        h1 {
+            margin-bottom: 20px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        a {
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #333;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .main-bubble {
+                width: 220px;
+                height: 220px;
+            }
+            
+            .project-bubble, .about-bubble, .contact-bubble, .skills-bubble, 
+            .blog-bubble, .experience-bubble, .education-bubble, .portfolio-bubble {
+                width: 140px;
+                height: 140px;
+            }
+
+            .bubble h2 {
+                font-size: 1em;
+            }
+
+            .icon {
+                font-size: 18px;
+            }
+        }
+
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #particleCanvas.hidden {
+            opacity: 0.8;
+        }
+
+        .zooming .bubble:not(.clicked) {
+            opacity: 0;  /* Hide other bubbles during zoom */
+        }
+
+        /* Remove tunnel effect styles */
+        .tunnel-effect {
+            display: none;
+        }
+
+        /* Update content text colors for dark background */
+        .bubble-content.active h1,
+        .bubble-content.active h2 {
+            color: white;
+        }
+
+        .bubble-content.active p {
+            color: #e0e0e0;
+        }
+
+        .bubble-content.active a {
+            color: #ffffff;
+            border-bottom: 1px solid #ffffff;
+        }
+
+        .bubble-content.active .close-button {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    <canvas id="connectionCanvas"></canvas>
+    
+    <div class="bubble-container" id="bubbleContainer">
+        <!-- Main Bubble -->
+        <div class="bubble main-bubble" id="mainBubble">
+            <h1>Seth</h1>
+            <p>Welcome to my interactive portfolio. Move your cursor to interact with the bubbles.</p>
+        </div>
+
+        <!-- Project Bubbles -->
+        <div class="bubble project-bubble" data-content="introduction">
+            <div class="icon">👋</div>
+            <h2>Introduction</h2>
+        </div>
+
+        <div class="bubble about-bubble" data-content="assencium">
+            <div class="icon">🎮</div>
+            <h2>Assencium</h2>
+        </div>
+
+        <div class="bubble skills-bubble" data-content="bridge">
+            <div class="icon">🌉</div>
+            <h2>Bridge East</h2>
+        </div>
+
+        <div class="bubble portfolio-bubble" data-content="other">
+            <div class="icon">🚀</div>
+            <h2>Other Projects</h2>
+        </div>
+
+        <div class="bubble contact-bubble" data-content="contact">
+            <div class="icon">📬</div>
+            <h2>Contact</h2>
+        </div>
+
+        <div class="bubble blog-bubble" data-content="blog">
+            <div class="icon">✏️</div>
+            <h2>Blog</h2>
+        </div>
+
+        <div class="bubble experience-bubble" data-content="programming">
+            <div class="icon">💻</div>
+            <h2>Programming</h2>
+        </div>
+
+        <div class="bubble education-bubble" data-content="education">
+            <div class="icon">🎓</div>
+            <h2>Education</h2>
+        </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="bubble-content" id="introductionContent">
+        <div class="bubble-content-inner">
+            <h1>Introduction</h1>
+            <button class="close-button">&times;</button>
+            <p>Welcome! I'm Seth, a passionate developer and creator.</p>
+            <!-- We'll fill this with your personal introduction -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="assenciumContent">
+        <div class="bubble-content-inner">
+            <h1>Assencium</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll fill this with Assencium project details -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="bridgeContent">
+        <div class="bubble-content-inner">
+            <h1>Bridge East</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll fill this with Bridge East project details -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="otherContent">
+        <div class="bubble-content-inner">
+            <h1>Other Projects</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll fill this with other projects -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="contactContent">
+        <div class="bubble-content-inner">
+            <h1>Contact</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll update this with your contact information -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="blogContent">
+        <div class="bubble-content-inner">
+            <h1>Blog</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll fill this with your blog content -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="programmingContent">
+        <div class="bubble-content-inner">
+            <h1>Programming Projects</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll fill this with your programming projects -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="educationContent">
+        <div class="bubble-content-inner">
+            <h1>Education</h1>
+            <button class="close-button">&times;</button>
+            <!-- We'll fill this with your education details -->
+        </div>
+    </div>
+
+    <div class="bubble-content" id="projectsContent">
+        <div class="bubble-content-inner">
+            <h1>My Projects</h1>
+            <button class="close-button">&times;</button>
+            <div>
+                <h2>Project 1</h2>
+                <p>Description of your first project. What technologies you used, challenges you faced, and the outcome.</p>
+                <p><a href="#">View Project →</a></p>
+                <hr style="margin: 20px 0; opacity: 0.1;">
+                
+                <h2>Project 2</h2>
+                <p>Description of your second project. What technologies you used, challenges you faced, and the outcome.</p>
+                <p><a href="#">View Project →</a></p>
+                <hr style="margin: 20px 0; opacity: 0.1;">
+                
+                <h2>Project 3</h2>
+                <p>Description of your third project. What technologies you used, challenges you faced, and the outcome.</p>
+                <p><a href="#">View Project →</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bubble-content" id="aboutContent">
+        <div class="bubble-content-inner">
+            <h1>About Me</h1>
+            <button class="close-button">&times;</button>
+            <p>Hello! I'm Seth, a [your profession/title] based in [your location].</p>
+            <p>I specialize in [your specialties] and I'm passionate about [your interests/passions].</p>
+            <p>I have [X] years of experience in [industry/field], working with a variety of technologies and tools.</p>
+            <p>When I'm not coding, I enjoy [your hobbies/activities outside of work].</p>
+            <p>I'm always open to new challenges and opportunities to learn and grow as a [your profession].</p>
+        </div>
+    </div>
+
+    <div class="bubble-content" id="skillsContent">
+        <div class="bubble-content-inner">
+            <h1>Skills & Expertise</h1>
+            <button class="close-button">&times;</button>
+            <h2>Technical Skills</h2>
+            <p>Languages: [list your programming languages]</p>
+            <p>Frameworks: [list frameworks you're familiar with]</p>
+            <p>Tools: [list development tools you use]</p>
+            <p>Platforms: [list platforms you work with]</p>
+            
+            <h2>Other Skills</h2>
+            <p>Project Management, UI/UX Design, [other relevant skills]</p>
+        </div>
+    </div>
+
+    <div class="bubble-content" id="experienceContent">
+        <div class="bubble-content-inner">
+            <h1>Work Experience</h1>
+            <button class="close-button">&times;</button>
+            <article style="margin-bottom: 30px;">
+                <h2>Job Title 1</h2>
+                <p style="opacity: 0.6;">Company Name | 2023 - Present</p>
+                <ul style="margin-left: 20px;">
+                    <li>Key achievement or responsibility</li>
+                    <li>Key achievement or responsibility</li>
+                    <li>Key achievement or responsibility</li>
+                </ul>
+            </article>
+            
+            <article>
+                <h2>Job Title 2</h2>
+                <p style="opacity: 0.6;">Company Name | 2020 - 2023</p>
+                <ul style="margin-left: 20px;">
+                    <li>Key achievement or responsibility</li>
+                    <li>Key achievement or responsibility</li>
+                    <li>Key achievement or responsibility</li>
+                </ul>
+            </article>
+        </div>
+    </div>
+
+    <div class="bubble-content" id="portfolioContent">
+        <div class="bubble-content-inner">
+            <h1>Portfolio Gallery</h1>
+            <button class="close-button">&times;</button>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <h2>Project Title 1</h2>
+                    <p>Brief description of the project and its impact.</p>
+                    <p><a href="#">View Project →</a></p>
+                </div>
+                <div>
+                    <h2>Project Title 2</h2>
+                    <p>Brief description of the project and its impact.</p>
+                    <p><a href="#">View Project →</a></p>
+                </div>
+                <div>
+                    <h2>Project Title 3</h2>
+                    <p>Brief description of the project and its impact.</p>
+                    <p><a href="#">View Project →</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bubbleContainer = document.getElementById('bubbleContainer');
+            const mainBubble = document.getElementById('mainBubble');
+            const bubbles = document.querySelectorAll('.bubble:not(.main-bubble)');
+            const contentSections = document.querySelectorAll('.bubble-content');
+            const closeButtons = document.querySelectorAll('.close-button');
+            const canvas = document.getElementById('connectionCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            function setCanvasSize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            // Set initial positions
+            function setInitialPositions() {
+                const containerWidth = bubbleContainer.offsetWidth;
+                const containerHeight = bubbleContainer.offsetHeight;
+                
+                // Position main bubble in the center
+                mainBubble.style.left = (containerWidth / 2 - mainBubble.offsetWidth / 2) + 'px';
+                mainBubble.style.top = (containerHeight / 2 - mainBubble.offsetHeight / 2) + 'px';
+                
+                // Position other bubbles around the main bubble
+                const radius = Math.min(containerWidth, containerHeight) * 0.3;
+                const totalBubbles = bubbles.length;
+                
+                bubbles.forEach((bubble, index) => {
+                    // Start from -Math.PI/2 (top) and go clockwise
+                    const angle = (-Math.PI/2) + (index / totalBubbles) * 2 * Math.PI;
+                    const x = containerWidth / 2 + radius * Math.cos(angle) - bubble.offsetWidth / 2;
+                    const y = containerHeight / 2 + radius * Math.sin(angle) - bubble.offsetHeight / 2;
+                    
+                    bubble.style.left = x + 'px';
+                    bubble.style.top = y + 'px';
+                    
+                    // Store original position for animation
+                    bubble.setAttribute('data-original-x', x);
+                    bubble.setAttribute('data-original-y', y);
+                    bubble.setAttribute('data-angle', angle);
+                    
+                    // Add random subtle movement
+                    animateBubble(bubble);
+                });
+                
+                // Draw connection lines
+                drawConnections();
+            }
+            
+            // Draw lines connecting bubbles to the main bubble
+            function drawConnections() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const mainBubbleX = mainBubble.offsetLeft + mainBubble.offsetWidth / 2;
+                const mainBubbleY = mainBubble.offsetTop + mainBubble.offsetHeight / 2;
+                
+                bubbles.forEach(bubble => {
+                    const bubbleX = bubble.offsetLeft + bubble.offsetWidth / 2;
+                    const bubbleY = bubble.offsetTop + bubble.offsetHeight / 2;
+                    
+                    // Calculate positions for line endpoints (on the edge of the bubbles)
+                    const angle = Math.atan2(bubbleY - mainBubbleY, bubbleX - mainBubbleX);
+                    
+                    const mainBubbleRadius = mainBubble.offsetWidth / 2;
+                    const bubbleRadius = bubble.offsetWidth / 2;
+                    
+                    const startX = mainBubbleX + Math.cos(angle) * mainBubbleRadius;
+                    const startY = mainBubbleY + Math.sin(angle) * mainBubbleRadius;
+                    
+                    const endX = bubbleX - Math.cos(angle) * bubbleRadius;
+                    const endY = bubbleY - Math.sin(angle) * bubbleRadius;
+                    
+                    // Draw the line
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = 'rgba(128, 128, 128, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+            }
+            
+            function calculateBubbleForces(bubbles) {
+                const forces = new Map();
+                
+                bubbles.forEach(bubble => {
+                    forces.set(bubble, { x: 0, y: 0 });
+                });
+                
+                bubbles.forEach((bubble1, i) => {
+                    const rect1 = bubble1.getBoundingClientRect();
+                    const center1 = {
+                        x: rect1.left + rect1.width / 2,
+                        y: rect1.top + rect1.height / 2
+                    };
+                    const radius1 = rect1.width / 2;
+                    const scale1 = parseFloat(bubble1.getAttribute('data-scale')) || 1;
+                    
+                    // Add stronger force for main bubble
+                    const forceMultiplier = bubble1.classList.contains('main-bubble') ? 0.2 : 0.1;
+                    
+                    bubbles.forEach((bubble2, j) => {
+                        if (i <= j) return;
+                        
+                        const rect2 = bubble2.getBoundingClientRect();
+                        const center2 = {
+                            x: rect2.left + rect2.width / 2,
+                            y: rect2.top + rect2.height / 2
+                        };
+                        const radius2 = rect2.width / 2;
+                        const scale2 = parseFloat(bubble2.getAttribute('data-scale')) || 1;
+                        
+                        const dx = center2.x - center1.x;
+                        const dy = center2.y - center1.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // Increased buffer for main bubble interactions
+                        const buffer = (bubble1.classList.contains('main-bubble') || bubble2.classList.contains('main-bubble')) ? 1.2 : 1.1;
+                        const minDistance = (radius1 * scale1 + radius2 * scale2) * buffer;
+                        
+                        if (distance < minDistance) {
+                            const force = (minDistance - distance) * forceMultiplier;
+                            const angle = Math.atan2(dy, dx);
+                            const forceX = Math.cos(angle) * force;
+                            const forceY = Math.sin(angle) * force;
+                            
+                            forces.get(bubble1).x -= forceX;
+                            forces.get(bubble1).y -= forceY;
+                            forces.get(bubble2).x += forceX;
+                            forces.get(bubble2).y += forceY;
+                        }
+                    });
+                });
+                
+                return forces;
+            }
+
+            // Update the animateBubble function
+            function animateBubble(bubble) {
+                const originalX = parseFloat(bubble.getAttribute('data-original-x'));
+                const originalY = parseFloat(bubble.getAttribute('data-original-y'));
+                
+                function moveRandomly() {
+                    const randomX = (Math.random() * 30 - 15);
+                    const randomY = (Math.random() * 30 - 15);
+                    const duration = 2 + Math.random() * 2;
+                    
+                    bubble.setAttribute('data-random-x', randomX);
+                    bubble.setAttribute('data-random-y', randomY);
+                    
+                    const scale = bubble.getAttribute('data-scale') || 1;
+                    
+                    // Calculate forces from other bubbles
+                    const forces = calculateBubbleForces(Array.from(document.querySelectorAll('.bubble')));
+                    const bubbleForce = forces.get(bubble);
+                    
+                    // Apply both random movement and forces
+                    const totalX = randomX + bubbleForce.x;
+                    const totalY = randomY + bubbleForce.y;
+                    
+                    bubble.style.transition = `transform ${duration}s ease-in-out`;
+                    bubble.style.transform = `translate(${totalX}px, ${totalY}px) scale(${scale})`;
+                    
+                    setTimeout(moveRandomly, duration * 1000);
+                }
+                
+                moveRandomly();
+            }
+
+            // Update the mouseenter event to trigger force calculations
+            document.querySelectorAll('.bubble').forEach(bubble => {
+                bubble.addEventListener('mouseenter', function() {
+                    bubble.setAttribute('data-scale', '1.15');
+                    const randomX = bubble.getAttribute('data-random-x') || 0;
+                    const randomY = bubble.getAttribute('data-random-y') || 0;
+                    
+                    // Recalculate forces for all bubbles
+                    const forces = calculateBubbleForces(Array.from(document.querySelectorAll('.bubble')));
+                    
+                    // Apply new positions to all bubbles
+                    document.querySelectorAll('.bubble').forEach(b => {
+                        const force = forces.get(b);
+                        const bRandomX = parseFloat(b.getAttribute('data-random-x')) || 0;
+                        const bRandomY = parseFloat(b.getAttribute('data-random-y')) || 0;
+                        const bScale = b.getAttribute('data-scale') || 1;
+                        
+                        b.style.transform = `translate(${bRandomX + force.x}px, ${bRandomY + force.y}px) scale(${bScale})`;
+                    });
+                });
+
+                // Keep the original mouseleave event
+                bubble.addEventListener('mouseleave', function() {
+                    bubble.setAttribute('data-scale', '1');
+                    const randomX = bubble.getAttribute('data-random-x') || 0;
+                    const randomY = bubble.getAttribute('data-random-y') || 0;
+                    bubble.style.transform = `translate(${randomX}px, ${randomY}px) scale(1)`;
+                });
+            });
+            
+            // Update mouse movement handler
+            bubbleContainer.addEventListener('mousemove', function(e) {
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+                
+                bubbles.forEach(bubble => {
+                    const bubbleX = bubble.offsetLeft + bubble.offsetWidth / 2;
+                    const bubbleY = bubble.offsetTop + bubble.offsetHeight / 2;
+                    
+                    const deltaX = mouseX - bubbleX;
+                    const deltaY = mouseY - bubbleY;
+                    
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    
+                    if (distance < 200) {
+                        const repulsionFactor = 0.4;
+                        const repulsionX = -deltaX * repulsionFactor * (1 - distance / 200);
+                        const repulsionY = -deltaY * repulsionFactor * (1 - distance / 200);
+                        
+                        // Preserve scale when applying repulsion
+                        const scale = bubble.getAttribute('data-scale') || 1;
+                        bubble.style.transition = 'transform 0.2s ease-out';
+                        bubble.style.transform = `translate(${repulsionX}px, ${repulsionY}px) scale(${scale})`;
+                    }
+                });
+                
+                requestAnimationFrame(drawConnections);
+            });
+            
+            // Update bubble click handler
+            bubbles.forEach(bubble => {
+                bubble.addEventListener('click', function(e) {
+                    const contentId = this.getAttribute('data-content') + 'Content';
+                    const content = document.getElementById(contentId);
+                    
+                    if (content) {
+                        // Get the clicked bubble's position
+                        const rect = this.getBoundingClientRect();
+                        const bubbleX = rect.left + rect.width / 2;
+                        const bubbleY = rect.top + rect.height / 2;
+                        
+                        // Calculate position as percentage for transform-origin
+                        const originX = (bubbleX / window.innerWidth) * 100;
+                        const originY = (bubbleY / window.innerHeight) * 100;
+                        
+                        // Add clicked class to this bubble
+                        bubble.classList.add('clicked');
+                        
+                        // Set zoom origin and trigger animation
+                        bubbleContainer.style.setProperty('--zoom-x', `${originX}%`);
+                        bubbleContainer.style.setProperty('--zoom-y', `${originY}%`);
+                        
+                        // Start zoom
+                        bubbleContainer.classList.add('zooming');
+                        
+                        // Hide particles during zoom
+                        document.getElementById('particleCanvas').classList.add('hidden');
+                        
+                        // Stop all bubble animations
+                        document.querySelectorAll('.bubble').forEach(b => {
+                            const currentTransform = window.getComputedStyle(b).transform;
+                            b.style.transition = 'none';
+                            b.style.transform = currentTransform;
+                        });
+                        
+                        // Show content after zoom animation is nearly complete
+                        setTimeout(() => {
+                            content.classList.add('active');
+                        }, 600);
+                    }
+                });
+            });
+
+            // Update close button handler
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const content = this.closest('.bubble-content');
+                    const connectionCanvas = document.getElementById('connectionCanvas');
+                    
+                    // First fade out everything
+                    content.classList.add('closing');
+                    bubbleContainer.classList.add('fade-out');
+                    if (connectionCanvas) {
+                        connectionCanvas.remove();
+                    }
+                    
+                    // Wait for fade out
+                    setTimeout(() => {
+                        // Remove content and zooming
+                        content.classList.remove('active');
+                        bubbleContainer.classList.remove('zooming');
+                        document.querySelector('.bubble.clicked').classList.remove('clicked');
+                        
+                        // Reset ALL bubble positions while everything is invisible
+                        const allBubbles = document.querySelectorAll('.bubble:not(.main-bubble)');
+                        allBubbles.forEach(bubble => {
+                            const originalX = parseFloat(bubble.getAttribute('data-original-x'));
+                            const originalY = parseFloat(bubble.getAttribute('data-original-y'));
+                            bubble.style.transition = 'none';
+                            bubble.style.transform = 'none';
+                            bubble.style.left = originalX + 'px';
+                            bubble.style.top = originalY + 'px';
+                        });
+                        
+                        // Fade everything back in
+                        setTimeout(() => {
+                            content.classList.remove('closing');
+                            bubbleContainer.classList.remove('fade-out');
+                            bubbleContainer.classList.add('fade-in');
+                            document.getElementById('particleCanvas').classList.remove('hidden');
+                            
+                            // Restart animations after fade-in
+                            setTimeout(() => {
+                                bubbleContainer.classList.remove('fade-in');
+                                allBubbles.forEach(bubble => {
+                                    bubble.style.transition = '';
+                                    animateBubble(bubble);
+                                });
+                            }, 1500);
+                        }, 500); // Increased delay before fade-in
+                    }, 300);
+                });
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                setCanvasSize();
+                setInitialPositions();
+            });
+            
+            // Initialize
+            setCanvasSize();
+            setInitialPositions();
+
+            // Add particle animation
+            const particleCanvas = document.getElementById('particleCanvas');
+            const particleCtx = particleCanvas.getContext('2d');
+            
+            // Set particle canvas size
+            function setParticleCanvasSize() {
+                particleCanvas.width = window.innerWidth;
+                particleCanvas.height = window.innerHeight;
+            }
+            setParticleCanvasSize();
+
+            // Particle class
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = Math.random() * particleCanvas.width;
+                    this.y = Math.random() * particleCanvas.height;
+                    this.size = Math.random() * 3 + 1;
+                    this.speedX = Math.random() * 0.2 - 0.1;
+                    this.speedY = Math.random() * 0.2 - 0.1;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                }
+
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+
+                    if (this.x < 0 || this.x > particleCanvas.width) this.reset();
+                    if (this.y < 0 || this.y > particleCanvas.height) this.reset();
+                }
+
+                draw() {
+                    particleCtx.beginPath();
+                    particleCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    particleCtx.fillStyle = `rgba(128, 128, 128, ${this.opacity})`;
+                    particleCtx.fill();
+                }
+            }
+
+            // Create particles
+            const particles = [];
+            const numberOfParticles = 100;
+
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+
+            // Animate particles
+            function animateParticles() {
+                particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+                
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+                
+                requestAnimationFrame(animateParticles);
+            }
+
+            // Start particle animation
+            animateParticles();
+
+            // Update particle canvas on window resize
+            window.addEventListener('resize', function() {
+                setParticleCanvasSize();
+                setCanvasSize();
+                setInitialPositions();
+            });
+
+            // When initializing the page, remove the canvas if it exists
+            const connectionCanvas = document.getElementById('connectionCanvas');
+            if (connectionCanvas) {
+                connectionCanvas.remove();
+            }
+        });
+    </script>
+</body>
+</html>
